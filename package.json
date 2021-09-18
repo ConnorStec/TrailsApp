@@ -1,7 +1,7 @@
 {
-  "name": "express-vue-template",
+  "name": "trails-app",
   "version": "1.0.0",
-  "description": "Essentially boilerplate code to wire up an ExpressJS/PostgreSQL backend with a VueJS frontend.",
+  "description": "Coding challenge submission.",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ConnorStec/apptemplate.git"
+    "url": "git+https://github.com/ConnorStec/TrailsApp.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ConnorStec/apptemplate/issues"
+    "url": "https://github.com/ConnorStec/TrailsApp/issues"
   },
-  "homepage": "https://github.com/ConnorStec/apptemplate#readme",
+  "homepage": "https://github.com/ConnorStec/TrailsApp#readme",
   "dependencies": {
     "axios": "^0.19.2",
     "dotenv": "^8.2.0",
