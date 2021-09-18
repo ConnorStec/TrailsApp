@@ -1,0 +1,10 @@
+# env vars
+.env
+
+# node_modules
+node_modules
+
+notes.txt
+
+# pem files
+*.pem
