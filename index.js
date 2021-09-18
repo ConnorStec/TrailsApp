@@ -59,6 +59,20 @@ app.listen(port, () => {
         console.log('Query err', err);
         return res.sendStatus(500);
       });
+    })
+    .delete((req, res) => {
+      pool.query({
+        text: `
+          DELETE FROM trails
+          WHERE id = $1
+        `,
+        values: [req.trail.id]
+      }).then(() => {
+        return res.sendStatus(204);
+      }).catch((err) => {
+        console.error('Delete failed', err)
+        return res.sendStatus(500);
+      })
     });
 
   app.route('/api/trails/:id')
