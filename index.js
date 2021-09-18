@@ -1,21 +1,11 @@
 'use strict';
 
 require('dotenv').config();
+const ip = require('ip');
 
 process.on('unhandledRejection', function (reason, p) {
   console.error(`Possible unhandled rejection at: Promise ${JSON.stringify(p)}, Reason ${reason}`);
 });
-
-// https support via https://web.dev/how-to-use-local-https/
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const key = fs.readFileSync('./localhost-key.pem');
-const cert = fs.readFileSync('./localhost.pem');
-const httpsOpts = {
-  key,
-  cert,
-};
 
 const express = require('express');
 const Pool = require('pg').Pool;
@@ -34,61 +24,94 @@ const pool = new Pool({
   idleTimeoutMillis: 1000
 });
 
-const ip = require('ip');
+// Used in SQL statement INSERTs
+const TRAIL_FIELDS = [
+  'name',
+  'url',
+  'thumbUrl',
+  'length',
+  'elevationGain',
+  'description',
+];
 
+// serves the production frontend
 app.use('/', express.static(`${__dirname}/browser/dist/`));
 
-app.route('/').get((req, res) => {
-  console.log('hello route')
-  return res.sendStatus(200)
-})
+app.listen(port, () => {
+  app.get('/', (req, res) => { res.send('Hello api') });
+  app.route('/api/trails')
+    .all((req, res, next) => {
+      return next();
+    })
+    .get((req, res) => {
+      pool.query('SELECT * FROM trails')
+        .then((result) => {
+          return res.send(result.rows);
+        })
+    })
+    .post((req, res) => {
+      const { trails } = req.body;
+      const promises = trails.map(createInsertPromise);
+      return Promise.all(promises).then((success) => {
+        console.log('success', success);
+        return res.status(201).send(success);
+      }).catch((err) => {
+        console.log('Query err', err);
+        return res.sendStatus(500);
+      });
+    });
 
-const httpServer = http.createServer(app);
-const httpsServer = https.createServer(httpsOpts, app);
+  app.route('/api/trails/:id')
+    .all((req, res, next) => {
+      pool.query({
+        text: `SELECT * FROM trails WHERE id = $1`,
+        values: [req.params.id]
+      }).then((result) => {
+        req.trail = result.rows[0];
+        return next();
+      })
+    })
+    .get((req, res) => {
+      return res.send(req.trail);
+    })
+    .put((req, res) => {
+      pool.query({
+        text: `
+          UPDATE trails
+          SET ${createUpdateStatements(req.trail)}
+          WHERE id = $1
+        `,
+        values: []
+      })
+    })
 
-httpServer.listen(3000, () => {
-  console.log('http server listening')
+
+  console.log('App listening on port ' + port);
+  console.log('Local IP: ' + ip.address());
 });
-httpsServer.listen(8443, () => {
-  console.log('https server listening')
-});
 
-// app.listen(port, () => {
-//   app.route('/api/listings')
-//     .all((req, res, next) => {
-//       return next();
-//     })
-//     .get((req, res) => {
-//       pool.query('SELECT * FROM listings')
-//         .then((result) => {
-//           return res.send(result.rows);
-//         })
-//     })
-//     .post((req, res) => {
-//       pool.query({
-//         text: `
-//         INSERT INTO listings
-//         (
-//           name,
-//           mileage,
-//           mpgcity,
-//           mpghighway,
-//           color,
-//           engine,
-//           transmission,
-//           price,
-//           details
-//         )
-//         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-//         RETURNING *
-//       `,
-//         values: Object.values(req.body.listing)
-//       }).then((result) => {
-//         return res.send(result.rows);
-//       }).catch((err) => {
-//         console.error('Query error: ' + err);
-//       });
-//     });
-//   console.log('App listening on port ' + port);
-//   console.log('Local IP: ' + ip.address());
-// });
+
+function createInsertPromise(resource) {
+  // errors will be caught by the Promise.all catch, don't reject here
+  return new Promise((resolve) => {
+    return pool.query({
+      text: `
+        INSERT INTO trails
+        (${TRAIL_FIELDS.map(f => `"${f}"`).join(', ')})
+        VALUES
+        ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `,
+      values: TRAIL_FIELDS.map(f => resource[f])
+    }).then((result) => {
+      return resolve(result.rows[0]);
+    });
+  });
+}
+
+// take in an object and output a parameterized query string like '"boop"=$1, "snoot"=$2'
+function createUpdateStatements(resource) {
+  return TRAIL_FIELDS.map((f, index) => {
+    return `"${f}"=$${index}`;
+  });
+}

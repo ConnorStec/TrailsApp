@@ -1,23 +1,11 @@
 <template>
-  <div id="app">
-    <Topbar />
-    <div id="nav">
-      <router-link to="/">Home</router-link>|
-      <router-link to="/inventory">Inventory</router-link>|
-      <router-link to="/contact">Contact Us</router-link>|
-      <router-link to="/pricing">Pricing</router-link>
-    </div>
+  <v-app id="app">
     <router-view />
-  </div>
+  </v-app>
 </template>
 
 <script>
-import Topbar from "@/components/Topbar.vue";
-export default {
-  components: {
-    Topbar
-  }
-};
+export default {};
 </script>
 
 <style>
@@ -27,6 +15,8 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  background: rgb(255,173,188);
+  background: linear-gradient(170deg, rgba(255,173,188,1) 0%, rgba(255,255,255,1) 63%, rgba(124,153,247,1) 100%);
 }
 #nav {
   padding: 30px;
