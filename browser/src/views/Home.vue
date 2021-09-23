@@ -60,6 +60,10 @@
       <v-btn @click="trailsToSave.push({})">Add another trail</v-btn>
     </div>
 
+    <v-snackbar v-model="showSnackbar">
+      Trails Saved!
+    </v-snackbar>
+
   </div>
 </template>
 
@@ -84,6 +88,7 @@
         ],
         search: '',
         showForm: false,
+        showSnackbar: false,
         trailsToSave: [],
       };
     },
@@ -109,6 +114,7 @@
         try {
           const { data } = await this.$http.post('/api/trails', {trails: this.trailsToSave})
           this.trails.push(...data);
+          this.showSnackbar = true;
         } catch (err) {
           console.error('Save failed', err);
         }
